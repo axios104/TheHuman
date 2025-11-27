@@ -1,0 +1,190 @@
+/* Glassmorphism Effects - FIXED */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.37),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.glass-nav {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Neon Glow Text */
+.glow-text {
+  text-shadow: 
+    0 0 10px rgba(0, 240, 255, 1),
+    0 0 20px rgba(0, 240, 255, 0.8),
+    0 0 30px rgba(0, 240, 255, 0.6),
+    0 0 40px rgba(0, 240, 255, 0.4);
+  animation: glow-pulse 2s ease-in-out infinite alternate;
+}
+
+.glow-text-purple {
+  text-shadow: 
+    0 0 10px rgba(176, 38, 255, 1),
+    0 0 20px rgba(176, 38, 255, 0.8),
+    0 0 30px rgba(176, 38, 255, 0.6),
+    0 0 40px rgba(176, 38, 255, 0.4);
+  animation: glow-pulse-purple 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-pulse {
+  from {
+    text-shadow: 
+      0 0 10px rgba(0, 240, 255, 0.8),
+      0 0 20px rgba(0, 240, 255, 0.6),
+      0 0 30px rgba(0, 240, 255, 0.4);
+  }
+  to {
+    text-shadow: 
+      0 0 20px rgba(0, 240, 255, 1),
+      0 0 30px rgba(0, 240, 255, 0.8),
+      0 0 40px rgba(0, 240, 255, 0.6),
+      0 0 50px rgba(0, 240, 255, 0.4);
+  }
+}
+
+@keyframes glow-pulse-purple {
+  from {
+    text-shadow: 
+      0 0 10px rgba(176, 38, 255, 0.8),
+      0 0 20px rgba(176, 38, 255, 0.6),
+      0 0 30px rgba(176, 38, 255, 0.4);
+  }
+  to {
+    text-shadow: 
+      0 0 20px rgba(176, 38, 255, 1),
+      0 0 30px rgba(176, 38, 255, 0.8),
+      0 0 40px rgba(176, 38, 255, 0.6),
+      0 0 50px rgba(176, 38, 255, 0.4);
+  }
+}
+
+/* Cyber Buttons */
+.cyber-button-primary {
+  background: linear-gradient(135deg, #00F0FF 0%, #0080FF 100%);
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 0 20px rgba(0, 240, 255, 0.5),
+    0 4px 15px rgba(0, 128, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cyber-button-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 0 30px rgba(0, 240, 255, 0.8),
+    0 6px 20px rgba(0, 128, 255, 0.5);
+}
+
+.cyber-button-secondary {
+  background: transparent;
+  color: #FFFFFF;
+  border: 2px solid #00F0FF;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cyber-button-secondary:hover {
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 
+    0 0 20px rgba(0, 240, 255, 0.4),
+    inset 0 0 20px rgba(0, 240, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.cyber-button-small {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  border-radius: 20px;
+  color: #00F0FF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cyber-button-small:hover {
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+  border-color: #00F0FF;
+}
+
+.cyber-button-large {
+  background: linear-gradient(135deg, #B026FF 0%, #6A00FF 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 0 25px rgba(176, 38, 255, 0.6),
+    0 4px 20px rgba(106, 0, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cyber-button-large:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 0 40px rgba(176, 38, 255, 0.9),
+    0 6px 30px rgba(106, 0, 255, 0.6);
+}
+
+/* Grid Background */
+.grid-background {
+  background-image: 
+    linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: grid-move 20s linear infinite;
+}
+
+@keyframes grid-move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 50px;
+  }
+}
+
+/* Coming Soon Placeholder */
+.coming-soon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #000000;
+  color: #00F0FF;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  text-align: center;
+  padding: 2rem;
+}
