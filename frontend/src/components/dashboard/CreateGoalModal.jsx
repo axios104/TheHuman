@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { goalAPI, sectorAPI } from '../../utils/api';
+import toast from 'react-hot-toast';
 
 const CreateGoalModal = ({ isOpen, onClose, onSuccess, preselectedSectorId = null }) => {
   const [sectors, setSectors] = useState([]);
@@ -13,7 +14,63 @@ const CreateGoalModal = ({ isOpen, onClose, onSuccess, preselectedSectorId = nul
     deadline: ''
   });
   const [loading, setLoading] = useState(false);
+  const [loadingSectors, setLoadingSectors] = useState(true);
   const [error, setError] = useState('');
+
+  // Default 5 sectors
+  const defaultSectors = [
+    { id: 'default-1', name: 'Health & Fitness', icon: '💪', color: '#10b981', isDefault: true },
+    { id: 'default-2', name: 'Finance & Money', icon: '💰', color: '#f59e0b', isDefault: true },
+    { id: 'default-3', name: 'Career & Work', icon: '🚀', color: '#8b5cf6', isDefault: true },
+    { id: 'default-4', name: 'Learning & Skills', icon: '📚', color: '#06b6d4', isDefault: true },
+    { id: 'default-5', name: 'Mental Wellness', icon: '🧘', color: '#ec4899', isDefault: true }
+  ];
+
+
+// Update handleSubmit function
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!formData.sector_id) {
+    setError('Please select a sector');
+    toast.error('Please select a sector');
+    return;
+  }
+
+  const selectedSector = sectors.find(s => s.id === formData.sector_id);
+  if (selectedSector?.isDefault) {
+    const errorMsg = 'Please create this sector first before adding goals to it.';
+    setError(errorMsg);
+    toast.error(errorMsg);
+    return;
+  }
+  
+  setLoading(true);
+  setError('');
+
+  try {
+    const goalData = {
+      title: formData.title,
+      description: formData.description || null,
+      target_value: formData.target_value ? parseFloat(formData.target_value) : null,
+      unit: formData.unit || null,
+      deadline: formData.deadline || null
+    };
+
+    console.log('Creating goal for sector:', formData.sector_id);
+    await goalAPI.create(formData.sector_id, goalData);
+    toast.success(`🎯 Goal "${formData.title}" created!`, { duration: 2000 });
+    onSuccess();
+    handleClose();
+  } catch (err) {
+    console.error('Error creating goal:', err.response?.data);
+    const errorMsg = err.response?.data?.detail || 'Failed to create goal';
+    setError(errorMsg);
+    toast.error(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     if (isOpen) {
@@ -22,45 +79,36 @@ const CreateGoalModal = ({ isOpen, onClose, onSuccess, preselectedSectorId = nul
   }, [isOpen]);
 
   useEffect(() => {
-    if (preselectedSectorId) {
+    if (preselectedSectorId && sectors.length > 0) {
       setFormData(prev => ({ ...prev, sector_id: preselectedSectorId }));
     }
-  }, [preselectedSectorId]);
+  }, [preselectedSectorId, sectors]);
 
   const fetchSectors = async () => {
+    setLoadingSectors(true);
     try {
       const response = await sectorAPI.getAll();
-      setSectors(response.data);
-      if (!preselectedSectorId && response.data.length > 0) {
-        setFormData(prev => ({ ...prev, sector_id: response.data[0].id }));
+      console.log('Fetched sectors:', response.data);
+      
+      // Merge user sectors with default sectors
+      const userSectors = response.data || [];
+      const allSectors = [...userSectors, ...defaultSectors];
+      
+      setSectors(allSectors);
+      
+      // Set first sector as default if no preselected
+      if (!preselectedSectorId && allSectors.length > 0) {
+        setFormData(prev => ({ ...prev, sector_id: allSectors[0].id }));
       }
     } catch (error) {
       console.error('Error fetching sectors:', error);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const goalData = {
-        title: formData.title,
-        description: formData.description || null,
-        target_value: formData.target_value ? parseFloat(formData.target_value) : null,
-        unit: formData.unit || null,
-        deadline: formData.deadline || null
-      };
-
-      await goalAPI.create(formData.sector_id, goalData);
-      onSuccess();
-      handleClose();
-    } catch (err) {
-      console.error('Error creating goal:', err.response?.data);
-      setError(err.response?.data?.detail || 'Failed to create goal');
+      // Even on error, show default sectors
+      setSectors(defaultSectors);
+      if (!preselectedSectorId) {
+        setFormData(prev => ({ ...prev, sector_id: defaultSectors[0].id }));
+      }
     } finally {
-      setLoading(false);
+      setLoadingSectors(false);
     }
   };
 
@@ -125,19 +173,45 @@ const CreateGoalModal = ({ isOpen, onClose, onSuccess, preselectedSectorId = nul
                   <label className="block text-sm font-medium text-white mb-2">
                     Sector <span className="text-red-400">*</span>
                   </label>
-                  <select
-                    required
-                    value={formData.sector_id}
-                    onChange={(e) => setFormData({ ...formData, sector_id: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-primary transition-colors text-sm"
-                  >
-                    <option value="">Select a sector</option>
-                    {sectors.map(sector => (
-                      <option key={sector.id} value={sector.id}>
-                        {sector.icon} {sector.name}
-                      </option>
-                    ))}
-                  </select>
+                  {loadingSectors ? (
+                    <div className="text-white/60 text-sm">Loading sectors...</div>
+                  ) : (
+                    <>
+                      <select
+                        required
+                        value={formData.sector_id}
+                        onChange={(e) => setFormData({ ...formData, sector_id: e.target.value })}
+                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-primary transition-colors text-sm"
+                      >
+                        <option value="">Select a sector</option>
+                        
+                        {/* User's Created Sectors */}
+                        {sectors.filter(s => !s.isDefault).length > 0 && (
+                          <optgroup label="Your Sectors" className="bg-background-dark">
+                            {sectors.filter(s => !s.isDefault).map(sector => (
+                              <option key={sector.id} value={sector.id} className="bg-background-dark">
+                                {sector.icon} {sector.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+
+                        {/* Default Sectors (Not Created Yet) */}
+                        <optgroup label="Available Sectors (Create these first)" className="bg-background-dark">
+                          {sectors.filter(s => s.isDefault).map(sector => (
+                            <option key={sector.id} value={sector.id} className="bg-background-dark text-white/60">
+                              {sector.icon} {sector.name} (Not created)
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+
+                      {/* Helper Text */}
+                      <p className="text-xs text-white/40 mt-2">
+                        💡 Tip: Create sectors first from the Sectors page, then add goals to them
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 {/* Goal Title */}
@@ -224,7 +298,7 @@ const CreateGoalModal = ({ isOpen, onClose, onSuccess, preselectedSectorId = nul
                 <button
                   type="submit"
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || loadingSectors}
                   className="flex-1 px-4 py-2 rounded-lg bg-primary text-background-dark font-bold hover:opacity-90 transition-all disabled:opacity-50 text-sm"
                 >
                   {loading ? 'Creating...' : 'Create Goal'}

@@ -1,30 +1,34 @@
-from database import engine, SessionLocal
-from sqlalchemy import text
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from database import SQLALCHEMY_DATABASE_URL
+import models
 
-def test_connection():
-    try:
-        # Test connection
-        with engine.connect() as connection:
-            result = connection.execute(text("SELECT 1"))
-            print("✓ Database connection successful!")
-            
-        # Test session
-        db = SessionLocal()
-        print("✓ Database session created successfully!")
-        db.close()
-        
-        # List tables
-        with engine.connect() as connection:
-            result = connection.execute(text("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema='public'
-            """))
-            tables = [row[0] for row in result]
-            print(f"✓ Tables created: {', '.join(tables)}")
-            
-    except Exception as e:
-        print(f"✗ Database connection failed: {e}")
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+db = SessionLocal()
 
-if __name__ == "__main__":
-    test_connection()
+print("\n" + "="*50)
+print("DATABASE CHECK")
+print("="*50)
+
+# Check users
+users = db.query(models.User).all()
+print(f"\n👥 USERS ({len(users)}):")
+for user in users:
+    print(f"  - ID: {user.id}, Email: {user.email}, Name: {user.full_name}")
+
+# Check sectors
+sectors = db.query(models.Sector).all()
+print(f"\n📊 SECTORS ({len(sectors)}):")
+for sector in sectors:
+    print(f"  - ID: {sector.id}, Name: {sector.name}, User ID: {sector.user_id}, Active: {sector.is_active}")
+
+# Check goals
+goals = db.query(models.Goal).all()
+print(f"\n🎯 GOALS ({len(goals)}):")
+for goal in goals:
+    print(f"  - ID: {goal.id}, Title: {goal.title}, Sector ID: {goal.sector_id}, Completed: {goal.is_completed}")
+
+print("\n" + "="*50 + "\n")
+
+db.close()

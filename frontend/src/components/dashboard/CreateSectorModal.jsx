@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sectorAPI } from '../../utils/api';
+import toast from 'react-hot-toast';
 
 const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -25,9 +26,10 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
   ];
 
   const colors = [
-    '#0df2f2', '#10b981', '#f59e0b', '#ef4444', 
+    '#0df2f2', '#10b981', '#f59e0b', '#ef4444',
     '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
   ];
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,6 +41,7 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       const response = await sectorAPI.create(formData);
       console.log('Sector created successfully:', response.data);
+      toast.success(`✨ ${formData.name} sector created!`, { duration: 2000 });
       onSuccess();
       onClose();
       setFormData({
@@ -50,16 +53,18 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
       });
     } catch (err) {
       console.error('Error creating sector:', err.response?.data);
-      const errorMessage = err.response?.data?.detail 
-        ? (Array.isArray(err.response.data.detail) 
+      const errorMessage = err.response?.data?.detail
+        ? (Array.isArray(err.response.data.detail)
           ? err.response.data.detail.map(e => e.msg).join(', ')
           : err.response.data.detail)
         : 'Failed to create sector';
       setError(errorMessage);
+      toast.error(`Failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleTypeChange = (type) => {
     const selectedType = sectorTypes.find(t => t.value === type);
@@ -102,7 +107,7 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
               className="w-full max-w-xl max-h-[85vh] rounded-2xl border border-white/10 bg-background-dark shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              
+
               {/* Header - Fixed */}
               <div className="flex items-center justify-between p-4 border-b border-white/10 bg-white/5 flex-shrink-0">
                 <h2 className="text-xl font-bold text-white">Create New Sector</h2>
@@ -118,7 +123,7 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
 
               {/* Form - Scrollable */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                
+
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -161,11 +166,10 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
                         key={type.value}
                         type="button"
                         onClick={() => handleTypeChange(type.value)}
-                        className={`p-3 rounded-lg border transition-all ${
-                          formData.sector_type === type.value
+                        className={`p-3 rounded-lg border transition-all ${formData.sector_type === type.value
                             ? 'border-primary bg-primary/10 text-white scale-105'
                             : 'border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/10'
-                        }`}
+                          }`}
                       >
                         <div className="text-2xl mb-1">{type.icon}</div>
                         <div className="text-xs font-medium">{type.label}</div>
@@ -199,11 +203,10 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
                         key={color}
                         type="button"
                         onClick={() => setFormData({ ...formData, color })}
-                        className={`size-10 rounded-lg transition-all ${
-                          formData.color === color
+                        className={`size-10 rounded-lg transition-all ${formData.color === color
                             ? 'ring-2 ring-white ring-offset-2 ring-offset-background-dark scale-110'
                             : 'hover:scale-105'
-                        }`}
+                          }`}
                         style={{ backgroundColor: color }}
                       />
                     ))}
@@ -245,7 +248,7 @@ const CreateSectorModal = ({ isOpen, onClose, onSuccess }) => {
                     <span className="flex items-center justify-center gap-2">
                       <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                         ircle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
                       Creating...
                     </span>

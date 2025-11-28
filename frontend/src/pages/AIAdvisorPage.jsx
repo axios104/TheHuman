@@ -167,7 +167,6 @@ const AIAdvisorPage = () => {
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    // Create conversation if doesn't exist
     if (!currentConversationId) {
       try {
         const title = inputMessage.slice(0, 50) + (inputMessage.length > 50 ? '...' : '');
@@ -191,7 +190,6 @@ const AIAdvisorPage = () => {
 
     setMessages([...messages, userMessage]);
     
-    // Save user message to DB
     if (currentConversationId) {
       await conversationAPI.addMessage(currentConversationId, {
         role: 'user',
@@ -239,7 +237,6 @@ const AIAdvisorPage = () => {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Save AI message to DB
       if (currentConversationId) {
         await conversationAPI.addMessage(currentConversationId, {
           role: 'assistant',
@@ -304,16 +301,16 @@ const AIAdvisorPage = () => {
     <div className="min-h-screen bg-background-dark flex flex-col">
       <DashboardNav user={user} />
 
-      <div className="flex-1 flex pt-16">
+      <div className="flex-1 flex pt-16 relative">
         
-        {/* Sidebar - Conversation History */}
+        {/* Sidebar - FIXED POSITION */}
         <AnimatePresence>
           {showSidebar && (
             <motion.div
               initial={{ x: -300 }}
               animate={{ x: 0 }}
               exit={{ x: -300 }}
-              className="w-64 border-r border-white/10 bg-black/20 flex flex-col"
+              className="fixed left-0 top-16 bottom-0 w-64 border-r border-white/10 bg-background-dark flex flex-col z-40"
             >
               <div className="p-4 border-b border-white/10">
                 <button
@@ -374,7 +371,6 @@ const AIAdvisorPage = () => {
                           </button>
                         )}
 
-                        {/* Actions */}
                         <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                           <button
                             onClick={(e) => {
@@ -416,17 +412,24 @@ const AIAdvisorPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          
-          {/* Toggle Sidebar Button */}
-          <button
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="absolute left-4 top-20 z-10 p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all"
-          >
-            {showSidebar ? '◀' : '▶'}
-          </button>
+        {/* Toggle Sidebar Button - ATTACHED TO SIDEBAR */}
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className={`fixed top-20 z-50 p-3 rounded-r-lg bg-background-dark border border-l-0 border-white/10 text-white hover:bg-white/5 transition-all shadow-lg`}
+          style={{ 
+            left: showSidebar ? '256px' : '0px',
+            transition: 'left 0.3s ease'
+          }}
+        >
+          {showSidebar ? '◀' : '▶'}
+        </button>
 
+        {/* Main Content - WITH TRANSITION */}
+        <div 
+          className="flex-1 flex flex-col transition-all duration-300"
+          style={{ marginLeft: showSidebar ? '256px' : '0px' }}
+        >
+          
           {/* Configuration Panel */}
           <AnimatePresence>
             {showConfig && (
@@ -537,9 +540,9 @@ const AIAdvisorPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Settings Bar (when config is hidden) */}
+          {/* Settings Bar */}
           {!showConfig && (
-            <div className="border-b border-white/10 bg-background-dark/80 backdrop-blur-sm sticky top-16 z-40">
+            <div className="border-b border-white/10 bg-background-dark/80 backdrop-blur-sm sticky top-16 z-30">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -709,7 +712,7 @@ const AIAdvisorPage = () => {
         </div>
       </div>
 
-      {/* Limit Modal */}
+      {/* Modals */}
       <LimitModal 
         isOpen={showLimitModal}
         onClose={() => setShowLimitModal(false)}
@@ -721,7 +724,6 @@ const AIAdvisorPage = () => {
         }}
       />
 
-      {/* Delete Confirmation Modal */}
       <DeleteModal 
         isOpen={showDeleteModal}
         onClose={() => {

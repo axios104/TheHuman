@@ -9,24 +9,36 @@ const api = axios.create({
   },
 });
 
-// Add token to requests if it exists
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Handle 401 errors globally
-api.interceptors.response.use(
-  (response) => response,
+// Request interceptor - Add token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔑 Request with token:', config.method.toUpperCase(), config.url);
+    } else {
+      console.warn('⚠️ No token found for request:', config.url);
+    }
+    return config;
+  },
   (error) => {
+    console.error('❌ Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - Handle errors
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ Response:', response.config.url, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('❌ Response error:', error.response?.status, error.response?.data);
+    
     if (error.response?.status === 401) {
-      // Token is invalid or expired
+      console.log('🔒 Unauthorized - clearing token and redirecting to login');
       localStorage.removeItem('token');
-      
-      // Only redirect if not already on login/signup pages
       const currentPath = window.location.pathname;
       if (!['/login', '/signup', '/'].includes(currentPath)) {
         window.location.href = '/login';
@@ -45,34 +57,34 @@ export const authAPI = {
 };
 
 export const sectorAPI = {
-  getAll: () => api.get('/api/sectors'),
+  getAll: () => {
+    console.log('🔍 Fetching all sectors...');
+    return api.get('/api/sectors');
+  },
   getById: (id) => api.get(`/api/sectors/${id}`),
-  create: (data) => api.post('/api/sectors', data),
+  create: (data) => {
+    console.log('➕ Creating sector:', data);
+    return api.post('/api/sectors', data);
+  },
   update: (id, data) => api.put(`/api/sectors/${id}`, data),
   delete: (id) => api.delete(`/api/sectors/${id}`),
   getMessages: (id) => api.get(`/api/sectors/${id}/messages`),
-  sendMessage: (id, content) => api.post(`/api/sectors/${id}/messages`, { content }),
-  getAnalytics: (id, timeframe = 'week') => api.get(`/api/sectors/${id}/analytics?timeframe=${timeframe}`),
-  trackActivity: (id, activity) => api.post(`/api/sectors/${id}/activity`, activity),
+  sendMessage: (id, content) => api.post(`/api/sectors/${id}/messages`, { content, is_user: true }),
 };
 
 export const goalAPI = {
-  getAll: () => api.get('/api/goals'),
+  getAll: () => {
+    console.log('🔍 Fetching all goals...');
+    return api.get('/api/goals');
+  },
   getBySector: (sectorId) => api.get(`/api/sectors/${sectorId}/goals`),
-  create: (sectorId, data) => api.post(`/api/sectors/${sectorId}/goals`, data),
+  create: (sectorId, data) => {
+    console.log('➕ Creating goal for sector:', sectorId, data);
+    return api.post(`/api/sectors/${sectorId}/goals`, data);
+  },
   update: (goalId, data) => api.put(`/api/goals/${goalId}`, data),
   complete: (goalId) => api.put(`/api/goals/${goalId}/complete`),
   delete: (goalId) => api.delete(`/api/goals/${goalId}`),
-};
-
-export const statisticAPI = {
-  create: (sectorId, data) => api.post(`/api/sectors/${sectorId}/statistics`, data),
-  getAll: (sectorId) => api.get(`/api/sectors/${sectorId}/statistics`),
-};
-
-export const badgeAPI = {
-  getAll: () => api.get('/api/badges'),
-  getUserBadges: () => api.get('/api/users/me/badges'),
 };
 
 export const conversationAPI = {
@@ -84,5 +96,16 @@ export const conversationAPI = {
   getMessages: (id) => api.get(`/api/conversations/${id}/messages`),
   addMessage: (id, message) => api.post(`/api/conversations/${id}/messages`, message),
 };
+
+export const badgeAPI = {
+  checkProgress: () => api.get('/api/badges/check-progress'),
+};
+
+export const savedNewsAPI = {
+  getAll: () => api.get('/api/saved-news'),
+  save: (data) => api.post('/api/saved-news', data),
+  delete: (id) => api.delete(`/api/saved-news/${id}`),
+};
+
 
 export default api;
