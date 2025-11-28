@@ -10,9 +10,9 @@ const DashboardNav = ({ user }) => {
   const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
-  };
+  localStorage.removeItem('token');
+  window.location.href = '/';
+};
 
 const navLinks = [
   { path: '/dashboard', label: 'Dashboard', icon: '📊' },

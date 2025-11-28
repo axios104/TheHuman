@@ -496,3 +496,202 @@ async def get_user_badges(
         models.UserBadge.user_id == current_user.id
     ).all()
     return user_badges
+
+# Add these after your existing endpoints
+
+# ===== CONVERSATION ENDPOINTS =====
+
+@app.get("/api/conversations", response_model=List[schemas.ConversationResponse])
+async def get_conversations(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all conversations for current user"""
+    conversations = db.query(models.Conversation).filter(
+        models.Conversation.user_id == current_user.id
+    ).order_by(
+        models.Conversation.is_pinned.desc(),
+        models.Conversation.updated_at.desc()
+    ).all()
+    
+    result = []
+    for conv in conversations:
+        message_count = db.query(func.count(models.ConversationMessage.id)).filter(
+            models.ConversationMessage.conversation_id == conv.id
+        ).scalar()
+        
+        conv_dict = {
+            "id": conv.id,
+            "user_id": conv.user_id,
+            "title": conv.title,
+            "created_at": conv.created_at,
+            "updated_at": conv.updated_at,
+            "is_pinned": conv.is_pinned,
+            "message_count": message_count
+        }
+        result.append(conv_dict)
+    
+    return result
+
+@app.post("/api/conversations", response_model=schemas.ConversationResponse)
+async def create_conversation(
+    conversation: schemas.ConversationCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new conversation - max 5 conversations"""
+    conversation_count = db.query(func.count(models.Conversation.id)).filter(
+        models.Conversation.user_id == current_user.id
+    ).scalar()
+    
+    if conversation_count >= 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 5 conversations allowed. Please delete an existing conversation to create a new one."
+        )
+    
+    new_conversation = models.Conversation(
+        user_id=current_user.id,
+        title=conversation.title
+    )
+    db.add(new_conversation)
+    db.commit()
+    db.refresh(new_conversation)
+    
+    return {
+        "id": new_conversation.id,
+        "user_id": new_conversation.user_id,
+        "title": new_conversation.title,
+        "created_at": new_conversation.created_at,
+        "updated_at": new_conversation.updated_at,
+        "is_pinned": new_conversation.is_pinned,
+        "message_count": 0
+    }
+
+@app.get("/api/conversations/{conversation_id}", response_model=schemas.ConversationDetailResponse)
+async def get_conversation_detail(
+    conversation_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get conversation with all messages"""
+    conversation = db.query(models.Conversation).filter(
+        models.Conversation.id == conversation_id,
+        models.Conversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    return conversation
+
+@app.put("/api/conversations/{conversation_id}", response_model=schemas.ConversationResponse)
+async def update_conversation(
+    conversation_id: int,
+    conversation_update: schemas.ConversationUpdate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update conversation title or pin status"""
+    conversation = db.query(models.Conversation).filter(
+        models.Conversation.id == conversation_id,
+        models.Conversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    if conversation_update.title is not None:
+        conversation.title = conversation_update.title
+    if conversation_update.is_pinned is not None:
+        conversation.is_pinned = conversation_update.is_pinned
+    
+    conversation.updated_at = datetime.now()
+    db.commit()
+    db.refresh(conversation)
+    
+    message_count = db.query(func.count(models.ConversationMessage.id)).filter(
+        models.ConversationMessage.conversation_id == conversation.id
+    ).scalar()
+    
+    return {
+        "id": conversation.id,
+        "user_id": conversation.user_id,
+        "title": conversation.title,
+        "created_at": conversation.created_at,
+        "updated_at": conversation.updated_at,
+        "is_pinned": conversation.is_pinned,
+        "message_count": message_count
+    }
+
+@app.delete("/api/conversations/{conversation_id}")
+async def delete_conversation(
+    conversation_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a conversation"""
+    conversation = db.query(models.Conversation).filter(
+        models.Conversation.id == conversation_id,
+        models.Conversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    db.delete(conversation)
+    db.commit()
+    
+    return {"success": True, "message": "Conversation deleted"}
+
+@app.post("/api/conversations/{conversation_id}/messages", response_model=schemas.ConversationMessageResponse)
+async def add_message_to_conversation(
+    conversation_id: int,
+    message: schemas.ConversationMessageCreate,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Add a message to conversation"""
+    conversation = db.query(models.Conversation).filter(
+        models.Conversation.id == conversation_id,
+        models.Conversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    new_message = models.ConversationMessage(
+        conversation_id=conversation_id,
+        role=message.role,
+        content=message.content,
+        model_used=message.model_used
+    )
+    db.add(new_message)
+    
+    conversation.updated_at = datetime.now()
+    
+    db.commit()
+    db.refresh(new_message)
+    
+    return new_message
+
+@app.get("/api/conversations/{conversation_id}/messages", response_model=List[schemas.ConversationMessageResponse])
+async def get_conversation_messages(
+    conversation_id: int,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all messages in a conversation"""
+    conversation = db.query(models.Conversation).filter(
+        models.Conversation.id == conversation_id,
+        models.Conversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    messages = db.query(models.ConversationMessage).filter(
+        models.ConversationMessage.conversation_id == conversation_id
+    ).order_by(models.ConversationMessage.created_at).all()
+    
+    return messages

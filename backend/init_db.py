@@ -1,12 +1,12 @@
-from database import engine, Base
-from models import User, Sector, Message, Goal, Statistic, Badge, UserBadge, Attachment
+from database import engine
 import models
 
-def init_database():
-    """Create all database tables"""
-    print("Creating database tables...")
-    Base.metadata.create_all(bind=engine)
-    print("✓ Database tables created successfully!")
+print("Creating all tables...")
 
-if __name__ == "__main__":
-    init_database()
+# Create all tables
+models.Base.metadata.create_all(bind=engine)
+
+print("✅ Database initialized successfully!")
+print("\n📋 Tables created:")
+for table_name in models.Base.metadata.tables.keys():
+    print(f"   ✓ {table_name}")

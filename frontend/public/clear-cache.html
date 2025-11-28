@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clearing Cache...</title>
+    <style>
+        body {
+            background: #101012;
+            color: white;
+            font-family: system-ui;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 { color: #0df2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Clearing Cache...</h1>
+        <p>Please wait while we reset your session.</p>
+    </div>
+    <script>
+        // Clear everything
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear cookies
+        document.cookie.split(";").forEach(function(c) {
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Redirect to login
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1000);
+    </script>
+</body>
+</html>

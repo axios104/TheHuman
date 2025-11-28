@@ -157,3 +157,53 @@ class SectorDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Add these to your existing schemas.py
+
+class ConversationMessageCreate(BaseModel):
+    content: str
+    role: str  # 'user' or 'assistant'
+    model_used: Optional[str] = None
+
+class ConversationMessageResponse(BaseModel):
+    id: int
+    conversation_id: int
+    role: str
+    content: str
+    model_used: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ConversationCreate(BaseModel):
+    title: str = "New Conversation"
+
+class ConversationUpdate(BaseModel):
+    title: Optional[str] = None
+    is_pinned: Optional[bool] = None
+
+class ConversationResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    is_pinned: bool
+    message_count: Optional[int] = 0
+
+    class Config:
+        from_attributes = True
+
+class ConversationDetailResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    is_pinned: bool
+    conversation_messages: List[ConversationMessageResponse] = []
+
+    class Config:
+        from_attributes = True
+

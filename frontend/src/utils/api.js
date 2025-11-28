@@ -18,6 +18,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle 401 errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token is invalid or expired
+      localStorage.removeItem('token');
+      
+      // Only redirect if not already on login/signup pages
+      const currentPath = window.location.pathname;
+      if (!['/login', '/signup', '/'].includes(currentPath)) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authAPI = {
   signup: (data) => api.post('/api/auth/signup', data),
   login: (data) => api.post('/api/auth/login', `username=${data.email}&password=${data.password}`, {
@@ -34,12 +52,16 @@ export const sectorAPI = {
   delete: (id) => api.delete(`/api/sectors/${id}`),
   getMessages: (id) => api.get(`/api/sectors/${id}/messages`),
   sendMessage: (id, content) => api.post(`/api/sectors/${id}/messages`, { content }),
+  getAnalytics: (id, timeframe = 'week') => api.get(`/api/sectors/${id}/analytics?timeframe=${timeframe}`),
+  trackActivity: (id, activity) => api.post(`/api/sectors/${id}/activity`, activity),
 };
 
 export const goalAPI = {
+  getAll: () => api.get('/api/goals'),
+  getBySector: (sectorId) => api.get(`/api/sectors/${sectorId}/goals`),
   create: (sectorId, data) => api.post(`/api/sectors/${sectorId}/goals`, data),
-  getAll: (sectorId) => api.get(`/api/sectors/${sectorId}/goals`),
   update: (goalId, data) => api.put(`/api/goals/${goalId}`, data),
+  complete: (goalId) => api.put(`/api/goals/${goalId}/complete`),
   delete: (goalId) => api.delete(`/api/goals/${goalId}`),
 };
 
@@ -51,6 +73,16 @@ export const statisticAPI = {
 export const badgeAPI = {
   getAll: () => api.get('/api/badges'),
   getUserBadges: () => api.get('/api/users/me/badges'),
+};
+
+export const conversationAPI = {
+  getAll: () => api.get('/api/conversations'),
+  getById: (id) => api.get(`/api/conversations/${id}`),
+  create: (data) => api.post('/api/conversations', data),
+  update: (id, data) => api.put(`/api/conversations/${id}`, data),
+  delete: (id) => api.delete(`/api/conversations/${id}`),
+  getMessages: (id) => api.get(`/api/conversations/${id}/messages`),
+  addMessage: (id, message) => api.post(`/api/conversations/${id}/messages`, message),
 };
 
 export default api;
