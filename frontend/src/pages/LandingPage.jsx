@@ -8,24 +8,31 @@ const LandingPage = () => {
   const [hoveredBar, setHoveredBar] = useState(null);
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-background-dark text-text-primary overflow-x-hidden pt-16">
-      <NavBar />
-      <div className="relative flex min-h-screen w-full flex-col bg-background-dark text-text-primary overflow-x-hidden">
+    <div className="relative min-h-screen w-full overflow-x-hidden">
+      {/* Full Screen Background Image - FIXED */}
+      <div 
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDE3DmIkoAeTpWauV12XBtzqAuW7kAfOselWJuhGrMRngXv09JkNEo-Xy7CiIfdiXYsB2x13Kcyhd1ti7u2y17RPMEjHZNwP2yL1HQ1WI4BRlKbOj8qai0x1ZCEm_EKI2h6vakvuOzDydj7sGp6vWO0JMcBI2IrRqO9WPZtWhwOrvYVHmF8GgcwH7bzHuePYhZ093XE_dVl__EbsYH2LhsFJ2SjvQWtaAsdf00WLGUICM8kVZsEK57cfo3hCiPp9jKULKzrl5r9ea4C")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/85"></div>
+      </div>
+
+      {/* Content - Relative to show above background */}
+      <div className="relative z-10 flex min-h-screen w-full flex-col bg-transparent text-text-primary">
+        <NavBar />
+        
         <div className="flex w-full flex-1 flex-col items-center">
           <div className="flex w-full max-w-[1100px] flex-1 flex-col px-4 sm:px-10">
 
-            <NavBar />
+            <main className="flex w-full flex-1 flex-col items-center pt-16">
 
-            <main className="flex w-full flex-1 flex-col items-center">
-
-              {/* HERO SECTION - Full Screen */}
+              {/* HERO SECTION */}
               <section className="w-full py-20 sm:py-32">
-                <div
-                  className="flex min-h-[480px] flex-col items-center justify-center gap-6 rounded-xl bg-cover bg-center bg-no-repeat p-4 text-center sm:gap-8"
-                  style={{
-                    backgroundImage: 'linear-gradient(rgba(18, 18, 18, 0.7) 0%, rgba(18, 18, 18, 0.9) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuDE3DmIkoAeTpWauV12XBtzqAuW7kAfOselWJuhGrMRngXv09JkNEo-Xy7CiIfdiXYsB2x13Kcyhd1ti7u2y17RPMEjHZNwP2yL1HQ1WI4BRlKbOj8qai0x1ZCEm_EKI2h6vakvuOzDydj7sGp6vWO0JMcBI2IrRqO9WPZtWhwOrvYVHmF8GgcwH7bzHuePYhZ093XE_dVl__EbsYH2LhsFJ2SjvQWtaAsdf00WLGUICM8kVZsEK57cfo3hCiPp9jKULKzrl5r9ea4C")'
-                  }}
-                >
+                <div className="flex min-h-[480px] flex-col items-center justify-center gap-6 rounded-xl p-4 text-center sm:gap-8">
                   <motion.div
                     className="flex flex-col gap-2"
                     initial={{ opacity: 0, y: 30 }}
@@ -69,7 +76,7 @@ const LandingPage = () => {
 
                     {/* FOCUS SCORE - Interactive Circle Chart */}
                     <motion.div
-                      className="flex flex-col gap-6 rounded-xl border border-white/10 bg-black/20 p-6"
+                      className="flex flex-col gap-6 rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm p-6"
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
@@ -84,14 +91,14 @@ const LandingPage = () => {
                         <div className="relative size-40">
                           <svg className="size-full -rotate-90" viewBox="0 0 100 100">
                             ircle
-                            className="text-white/10"
-                            cx="50"
-                            cy="50"
-                            fill="transparent"
-                            r="45"
-                            stroke="currentColor"
-                            strokeWidth="10"
-                          />
+                              className="text-white/10"
+                              cx="50"
+                              cy="50"
+                              fill="transparent"
+                              r="45"
+                              stroke="currentColor"
+                              strokeWidth="10"
+                            />
                             <motion.circle
                               className="text-primary"
                               cx="50"
@@ -134,7 +141,7 @@ const LandingPage = () => {
 
                     {/* WEEKLY INSIGHTS - Interactive Bar Chart */}
                     <motion.div
-                      className="flex flex-col gap-6 rounded-xl border border-white/10 bg-black/20 p-6"
+                      className="flex flex-col gap-6 rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm p-6"
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
@@ -179,7 +186,7 @@ const LandingPage = () => {
 
                     {/* EVOLUTION TRAJECTORY - Interactive Line Chart */}
                     <motion.div
-                      className="flex flex-col gap-6 rounded-xl border border-white/10 bg-black/20 p-6 sm:col-span-2 lg:col-span-1"
+                      className="flex flex-col gap-6 rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm p-6 sm:col-span-2 lg:col-span-1"
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
@@ -242,7 +249,7 @@ const LandingPage = () => {
                       </p>
                     </div>
                     <motion.div
-                      className="w-full rounded-xl border border-white/10 bg-black/20 p-6 font-mono text-sm text-[#EAEAEA]"
+                      className="w-full rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm p-6 font-mono text-sm text-[#EAEAEA]"
                       whileHover={{ borderColor: 'rgba(13, 242, 242, 0.3)' }}
                     >
                       <div className="flex flex-col gap-4">
@@ -288,14 +295,14 @@ const LandingPage = () => {
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <motion.div
-                        className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/20 p-4 items-center text-center cursor-pointer"
+                        className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm p-4 items-center text-center cursor-pointer"
                         whileHover={{ scale: 1.05, borderColor: 'rgba(13, 242, 242, 0.5)' }}
                       >
                         <div className="text-primary text-4xl">🔒</div>
                         <h4 className="text-base font-bold leading-tight text-white">E2E Encryption</h4>
                       </motion.div>
                       <motion.div
-                        className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/20 p-4 items-center text-center cursor-pointer"
+                        className="flex flex-col gap-3 rounded-xl border border-white/10 bg-black/20 backdrop-blur-sm p-4 items-center text-center cursor-pointer"
                         whileHover={{ scale: 1.05, borderColor: 'rgba(13, 242, 242, 0.5)' }}
                       >
                         <div className="text-primary text-4xl">✓</div>

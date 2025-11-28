@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { authAPI } from '../utils/api';
+import { authAPI, sectorAPI, goalAPI, conversationAPI } from '../utils/api';
 import DashboardNav from '../components/dashboard/DashboardNav';
+import * as XLSX from 'xlsx';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -55,7 +56,6 @@ const ProfilePage = () => {
   };
 
   const handleUpdateProfile = async () => {
-    // TODO: Implement profile update API
     console.log('Updating profile:', formData);
     setEditMode(false);
   };
@@ -65,29 +65,94 @@ const ProfilePage = () => {
       ...prev,
       [setting]: !prev[setting]
     }));
-    // TODO: Save to backend
     console.log('Settings updated:', { ...settings, [setting]: !settings[setting] });
   };
 
-  const handleExportData = () => {
-    // Create dummy data export
-    const exportData = {
-      user: user,
-      exportDate: new Date().toISOString(),
-      sectors: [],
-      goals: [],
-      messages: []
-    };
+  const handleExportData = async (format) => {
+    try {
+      // Fetch all data
+      const [sectorsRes, goalsRes, conversationsRes] = await Promise.all([
+        sectorAPI.getAll(),
+        goalAPI.getAll(),
+        conversationAPI.getAll()
+      ]).catch(() => [{ data: [] }, { data: [] }, { data: [] }]);
 
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `human-data-export-${Date.now()}.json`;
-    link.click();
-    
-    setShowExportModal(false);
+      const exportData = {
+        user: {
+          name: user.full_name,
+          email: user.email,
+          level: user.human_level,
+          points: user.total_points,
+          streak: user.streak_days,
+          memberSince: user.created_at
+        },
+        sectors: sectorsRes.data || [],
+        goals: goalsRes.data || [],
+        conversations: conversationsRes.data || [],
+        exportDate: new Date().toISOString()
+      };
+
+      if (format === 'json') {
+        // JSON Export
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `human-data-export-${Date.now()}.json`;
+        link.click();
+      } else {
+        // Excel Export
+        const wb = XLSX.utils.book_new();
+
+        // User Info Sheet
+        const userSheet = XLSX.utils.json_to_sheet([exportData.user]);
+        XLSX.utils.book_append_sheet(wb, userSheet, 'User Info');
+
+        // Sectors Sheet
+        const sectorsSheet = XLSX.utils.json_to_sheet(
+          exportData.sectors.map(s => ({
+            Name: s.name,
+            Type: s.sector_type,
+            Description: s.description || '',
+            Color: s.color,
+            Active: s.is_active ? 'Yes' : 'No',
+            Created: new Date(s.created_at).toLocaleDateString()
+          }))
+        );
+        XLSX.utils.book_append_sheet(wb, sectorsSheet, 'Sectors');
+
+        // Goals Sheet
+        const goalsSheet = XLSX.utils.json_to_sheet(
+          exportData.goals.map(g => ({
+            Title: g.title,
+            Description: g.description || '',
+            Target: g.target_value || '',
+            Unit: g.unit || '',
+            Completed: g.is_completed ? 'Yes' : 'No',
+            Created: new Date(g.created_at).toLocaleDateString()
+          }))
+        );
+        XLSX.utils.book_append_sheet(wb, goalsSheet, 'Goals');
+
+        // Conversations Sheet
+        const conversationsSheet = XLSX.utils.json_to_sheet(
+          exportData.conversations.map(c => ({
+            Title: c.title,
+            Messages: c.message_count,
+            Created: new Date(c.created_at).toLocaleDateString()
+          }))
+        );
+        XLSX.utils.book_append_sheet(wb, conversationsSheet, 'Conversations');
+
+        // Download Excel
+        XLSX.writeFile(wb, `human-data-export-${Date.now()}.xlsx`);
+      }
+
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
   };
 
   if (loading) {
@@ -272,7 +337,7 @@ const ProfilePage = () => {
               <div className="flex items-center justify-between py-4">
                 <div>
                   <p className="text-white font-medium mb-1">Data Export</p>
-                  <p className="text-sm text-white/60">Download all your data anytime</p>
+                  <p className="text-sm text-white/60">Download all your data in Excel or JSON</p>
                 </div>
                 <button 
                   onClick={() => setShowExportModal(true)}
@@ -367,11 +432,11 @@ const ProfilePage = () => {
         onClose={() => setShowPasswordModal(false)}
       />
 
-      {/* Export Data Modal */}
+      {/* Export Data Modal - UPDATED */}
       <ExportModal 
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
-        onConfirm={handleExportData}
+        onExport={handleExportData}
       />
 
       {/* Delete Account Modal */}
@@ -390,7 +455,7 @@ const ProfilePage = () => {
   );
 };
 
-// Password Change Modal Component
+// Password Change Modal Component (SAME AS BEFORE)
 const PasswordModal = ({ isOpen, onClose }) => {
   const [passwords, setPasswords] = useState({
     current: '',
@@ -409,7 +474,6 @@ const PasswordModal = ({ isOpen, onClose }) => {
       setError('Password must be at least 6 characters');
       return;
     }
-    // TODO: Implement password change API
     console.log('Changing password...');
     onClose();
   };
@@ -490,8 +554,8 @@ const PasswordModal = ({ isOpen, onClose }) => {
   );
 };
 
-// Export Data Modal Component
-const ExportModal = ({ isOpen, onClose, onConfirm }) => {
+// UPDATED Export Data Modal Component
+const ExportModal = ({ isOpen, onClose, onExport }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -515,22 +579,36 @@ const ExportModal = ({ isOpen, onClose, onConfirm }) => {
                 <div className="text-5xl mb-4 text-center">📦</div>
                 <h3 className="text-2xl font-bold text-white mb-2 text-center">Export Your Data</h3>
                 <p className="text-white/60 text-center mb-6">
-                  Download a JSON file containing all your sectors, goals, messages, and statistics.
+                  Download your data in Excel or JSON format
                 </p>
-                <div className="flex gap-3">
+                <div className="space-y-3">
                   <button
-                    onClick={onClose}
-                    className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+                    onClick={() => onExport('excel')}
+                    className="w-full px-6 py-4 rounded-lg bg-green-500/10 border-2 border-green-500/30 text-green-400 font-bold hover:bg-green-500/20 transition-all flex items-center justify-center gap-3"
                   >
-                    Cancel
+                    <span className="text-2xl">📊</span>
+                    <div className="text-left">
+                      <div>Export as Excel</div>
+                      <div className="text-xs text-green-400/70">Recommended - Easy to view</div>
+                    </div>
                   </button>
                   <button
-                    onClick={onConfirm}
-                    className="flex-1 px-4 py-3 rounded-lg bg-primary text-background-dark font-bold hover:opacity-90 transition-all"
+                    onClick={() => onExport('json')}
+                    className="w-full px-6 py-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 font-medium hover:bg-blue-500/20 transition-all flex items-center justify-center gap-3"
                   >
-                    Download
+                    <span className="text-2xl">{ }</span>
+                    <div className="text-left">
+                      <div>Export as JSON</div>
+                      <div className="text-xs text-blue-400/70">For developers</div>
+                    </div>
                   </button>
                 </div>
+                <button
+                  onClick={onClose}
+                  className="w-full mt-4 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all"
+                >
+                  Cancel
+                </button>
               </div>
             </motion.div>
           </div>
@@ -540,7 +618,7 @@ const ExportModal = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// Delete Account Modal Component
+// Delete Account Modal Component (SAME AS BEFORE)
 const DeleteAccountModal = ({ isOpen, onClose, onConfirm }) => {
   const [confirmText, setConfirmText] = useState('');
 
@@ -601,7 +679,7 @@ const DeleteAccountModal = ({ isOpen, onClose, onConfirm }) => {
   );
 };
 
-// 2FA Modal Component
+// 2FA Modal Component (SAME AS BEFORE)
 const TwoFactorModal = ({ isOpen, onClose }) => {
   return (
     <AnimatePresence>

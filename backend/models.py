@@ -164,3 +164,19 @@ class ConversationMessage(Base):
     
     # Relationships
     conversation = relationship("Conversation", back_populates="conversation_messages")
+
+class SavedNews(Base):
+    __tablename__ = "saved_news"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    url = Column(String, nullable=False)
+    image = Column(String, nullable=True)
+    source = Column(String, nullable=True)
+    published_at = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    saved_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User")

@@ -1,31 +1,13 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
-from enum import Enum
 
-# Enums
-class SectorTypeEnum(str, Enum):
-    HEALTH = "HEALTH"
-    FINANCE = "FINANCE"
-    CAREER = "CAREER"
-    RELATIONSHIPS = "RELATIONSHIPS"
-    LEARNING = "LEARNING"
-    CREATIVITY = "CREATIVITY"
-    FITNESS = "FITNESS"
-    MENTAL_HEALTH = "MENTAL_HEALTH"
+# ==================== USER SCHEMAS ====================
 
-class BadgeTypeEnum(str, Enum):
-    BRONZE = "bronze"
-    SILVER = "silver"
-    GOLD = "gold"
-    PLATINUM = "platinum"
-    DIAMOND = "diamond"
-
-# User Schemas
 class UserCreate(BaseModel):
     email: EmailStr
-    full_name: str
     password: str
+    full_name: str
 
 class UserResponse(BaseModel):
     id: int
@@ -39,24 +21,30 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str
-    user: UserResponse
 
-# Sector Schemas
+# ==================== SECTOR SCHEMAS ====================
+
 class SectorCreate(BaseModel):
     name: str
-    sector_type: SectorTypeEnum
+    sector_type: str
     description: Optional[str] = None
     color: str = "#0df2f2"
     icon: str = "📊"
 
+class SectorUpdate(BaseModel):
+    name: Optional[str] = None
+    sector_type: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    is_active: Optional[bool] = None
+
 class SectorResponse(BaseModel):
     id: int
+    user_id: int
     name: str
     sector_type: str
-    description: Optional[str]
+    description: Optional[str] = None
     color: str
     icon: str
     is_active: bool
@@ -65,119 +53,65 @@ class SectorResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# Message Schemas
+
+# ==================== MESSAGE SCHEMAS ====================
+
 class MessageCreate(BaseModel):
     content: str
+    is_user: bool = True
 
 class MessageResponse(BaseModel):
     id: int
     sector_id: int
     content: str
     is_user: bool
-    ai_model: Optional[str]
+    ai_model: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
-# Goal Schemas
+
+# ==================== GOAL SCHEMAS ====================
+
 class GoalCreate(BaseModel):
     title: str
     description: Optional[str] = None
     target_value: Optional[float] = None
+    current_value: Optional[float] = 0
     unit: Optional[str] = None
-    deadline: Optional[datetime] = None
+    deadline: Optional[str] = None
+
+class GoalUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
+    unit: Optional[str] = None
+    deadline: Optional[str] = None
+    is_completed: Optional[bool] = None
 
 class GoalResponse(BaseModel):
     id: int
     sector_id: int
     title: str
-    description: Optional[str]
-    target_value: Optional[float]
-    current_value: float
-    unit: Optional[str]
-    deadline: Optional[datetime]
-    is_completed: bool
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# Statistic Schemas
-class StatisticCreate(BaseModel):
-    metric_name: str
-    value: float
+    description: Optional[str] = None
+    target_value: Optional[float] = None
+    current_value: Optional[float] = None
     unit: Optional[str] = None
-    extra_data: Optional[dict] = None
-
-class StatisticResponse(BaseModel):
-    id: int
-    sector_id: int
-    metric_name: str
-    value: float
-    unit: Optional[str]
-    recorded_at: datetime
-    extra_data: Optional[dict]
-
-    class Config:
-        from_attributes = True
-
-# Badge Schemas
-class BadgeResponse(BaseModel):
-    id: int
-    name: str
-    description: str
-    badge_type: str
-    icon: str
-    points_value: int
-
-    class Config:
-        from_attributes = True
-
-class UserBadgeResponse(BaseModel):
-    id: int
-    badge: BadgeResponse
-    earned_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# Sector Detail (with nested data)
-class SectorDetailResponse(BaseModel):
-    id: int
-    name: str
-    sector_type: str
-    description: Optional[str]
-    color: str
-    icon: str
-    is_active: bool
-    created_at: datetime
-    messages: List[MessageResponse] = []
-    goals: List[GoalResponse] = []
-
-    class Config:
-        from_attributes = True
-
-# Add these to your existing schemas.py
-
-class ConversationMessageCreate(BaseModel):
-    content: str
-    role: str  # 'user' or 'assistant'
-    model_used: Optional[str] = None
-
-class ConversationMessageResponse(BaseModel):
-    id: int
-    conversation_id: int
-    role: str
-    content: str
-    model_used: Optional[str]
+    deadline: Optional[str] = None
+    is_completed: bool
+    completed_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+# ==================== CONVERSATION SCHEMAS ====================
 
 class ConversationCreate(BaseModel):
-    title: str = "New Conversation"
+    title: str
 
 class ConversationUpdate(BaseModel):
     title: Optional[str] = None
@@ -187,23 +121,107 @@ class ConversationResponse(BaseModel):
     id: int
     user_id: int
     title: str
+    is_pinned: bool
     created_at: datetime
     updated_at: datetime
-    is_pinned: bool
-    message_count: Optional[int] = 0
 
     class Config:
         from_attributes = True
 
-class ConversationDetailResponse(BaseModel):
+class ConversationListResponse(BaseModel):
     id: int
-    user_id: int
     title: str
     created_at: datetime
     updated_at: datetime
     is_pinned: bool
-    conversation_messages: List[ConversationMessageResponse] = []
+    message_count: int
 
     class Config:
         from_attributes = True
 
+
+# ==================== CONVERSATION MESSAGE SCHEMAS ====================
+
+class ConversationMessageCreate(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+    model_used: Optional[str] = None
+
+class ConversationMessageResponse(BaseModel):
+    id: int
+    conversation_id: int
+    role: str
+    content: str
+    model_used: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== STATISTIC SCHEMAS ====================
+
+class StatisticCreate(BaseModel):
+    metric_name: str
+    metric_value: float
+    notes: Optional[str] = None
+
+class StatisticResponse(BaseModel):
+    id: int
+    sector_id: int
+    metric_name: str
+    metric_value: float
+    notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== BADGE SCHEMAS ====================
+
+class BadgeResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    icon: str
+    requirement: str
+    points: int
+
+    class Config:
+        from_attributes = True
+
+class UserBadgeResponse(BaseModel):
+    id: int
+    user_id: int
+    badge_id: int
+    earned_at: datetime
+    badge: BadgeResponse
+
+    class Config:
+        from_attributes = True
+
+
+class SavedNewsCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    url: str
+    image: Optional[str] = None
+    source: Optional[str] = None
+    published_at: Optional[str] = None
+    category: Optional[str] = None
+
+class SavedNewsResponse(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    description: Optional[str] = None
+    url: str
+    image: Optional[str] = None
+    source: Optional[str] = None
+    published_at: Optional[str] = None
+    category: Optional[str] = None
+    saved_at: datetime
+
+    class Config:
+        from_attributes = True
