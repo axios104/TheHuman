@@ -21,28 +21,23 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
-# CORS - UPDATED FOR PRODUCTION
-ENV = os.getenv("ENV", "development")
-
+# CORS - CRITICAL FIX FOR YOUR DEPLOYMENT
 origins = [
     "http://localhost:5173",
     "http://localhost:3000",
+    "https://thehuman.vercel.app",  # ← YOUR FRONTEND URL
+    "https://the-human-backend.vercel.app",  # ← YOUR BACKEND URL
+    "https://*.vercel.app",  # All Vercel preview deployments
 ]
-
-if ENV == "production":
-    # Add your production frontend URL after deployment
-    origins.extend([
-        "https://thehuman.vercel.app/",  # Replace with your actual URL
-        "https://*.vercel.app",  # Allow all Vercel preview deployments
-    ])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if ENV == "development" else origins,
+    allow_origins=["*"],  # ← TEMPORARILY ALLOW ALL (we'll fix this after testing)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # ==================== AUTH ENDPOINTS ====================
 
