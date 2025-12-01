@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
+import os
 import models
 import schemas
 import auth
@@ -12,12 +13,32 @@ from database import engine, get_db
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="HUMAN API")
+# Initialize FastAPI
+app = FastAPI(
+    title="HUMAN API",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json"
+)
 
-# CORS
+# CORS - UPDATED FOR PRODUCTION
+ENV = os.getenv("ENV", "development")
+
+origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+
+if ENV == "production":
+    # Add your production frontend URL after deployment
+    origins.extend([
+        "https://thehuman.vercel.app/",  # Replace with your actual URL
+        "https://*.vercel.app",  # Allow all Vercel preview deployments
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"] if ENV == "development" else origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,12 +49,10 @@ app.add_middleware(
 @app.post("/api/auth/signup", response_model=schemas.UserResponse)
 async def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     """Create a new user"""
-    # Check if user exists
     existing_user = db.query(models.User).filter(models.User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user
     hashed_password = auth.get_password_hash(user.password)
     db_user = models.User(
         email=user.email,
@@ -415,7 +434,6 @@ async def get_conversations(
         models.Conversation.user_id == current_user.id
     ).order_by(models.Conversation.updated_at.desc()).all()
     
-    # Add message count
     result = []
     for conv in conversations:
         message_count = db.query(func.count(models.ConversationMessage.id)).filter(
@@ -442,7 +460,6 @@ async def create_conversation(
     db: Session = Depends(get_db)
 ):
     """Create a new conversation"""
-    # Check limit
     count = db.query(func.count(models.Conversation.id)).filter(
         models.Conversation.user_id == current_user.id
     ).scalar()
@@ -505,7 +522,6 @@ async def add_conversation_message(
     )
     db.add(db_message)
     
-    # Update conversation timestamp
     from datetime import datetime
     conversation.updated_at = datetime.utcnow()
     
@@ -561,57 +577,6 @@ async def delete_conversation(
     return {"message": "Conversation deleted successfully"}
 
 
-# ==================== BADGE ENDPOINTS ====================
-
-@app.get("/api/badges/check-progress")
-async def check_badge_progress(
-    current_user: models.User = Depends(auth.get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Check user's progress on all badges"""
-    
-    # Count sectors
-    sector_count = db.query(func.count(models.Sector.id)).filter(
-        models.Sector.user_id == current_user.id
-    ).scalar()
-    
-    # Count completed goals
-    sectors = db.query(models.Sector).filter(models.Sector.user_id == current_user.id).all()
-    sector_ids = [s.id for s in sectors]
-    completed_goals = db.query(func.count(models.Goal.id)).filter(
-        models.Goal.sector_id.in_(sector_ids),
-        models.Goal.is_completed == True
-    ).scalar() if sector_ids else 0
-    
-    # Count conversations with 5+ messages
-    conversations = db.query(models.Conversation).filter(
-        models.Conversation.user_id == current_user.id
-    ).all()
-    
-    ai_conversations = 0
-    for conv in conversations:
-        msg_count = db.query(func.count(models.ConversationMessage.id)).filter(
-            models.ConversationMessage.conversation_id == conv.id
-        ).scalar()
-        if msg_count >= 5:
-            ai_conversations += 1
-    
-    return {
-        "profile_complete": True,
-        "sectors_created": sector_count,
-        "goals_completed": completed_goals,
-        "streak_days": current_user.streak_days,
-        "ai_conversations": ai_conversations,
-        "zone_out_uses": 0,
-        "news_articles_read": 0,
-        "user_level": current_user.human_level
-    }
-
-
-@app.get("/")
-async def root():
-    return {"message": "HUMAN API is running"}
-
 # ==================== SAVED NEWS ENDPOINTS ====================
 
 @app.get("/api/saved-news", response_model=List[schemas.SavedNewsResponse])
@@ -636,7 +601,6 @@ async def save_news(
     db: Session = Depends(get_db)
 ):
     """Save a news article"""
-    # Check if already saved
     existing = db.query(models.SavedNews).filter(
         models.SavedNews.user_id == current_user.id,
         models.SavedNews.url == news.url
@@ -677,3 +641,56 @@ async def delete_saved_news(
     db.commit()
     
     return {"message": "Saved news deleted successfully"}
+
+
+# ==================== BADGE ENDPOINTS ====================
+
+@app.get("/api/badges/check-progress")
+async def check_badge_progress(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Check user's progress on all badges"""
+    sector_count = db.query(func.count(models.Sector.id)).filter(
+        models.Sector.user_id == current_user.id
+    ).scalar()
+    
+    sectors = db.query(models.Sector).filter(models.Sector.user_id == current_user.id).all()
+    sector_ids = [s.id for s in sectors]
+    completed_goals = db.query(func.count(models.Goal.id)).filter(
+        models.Goal.sector_id.in_(sector_ids),
+        models.Goal.is_completed == True
+    ).scalar() if sector_ids else 0
+    
+    conversations = db.query(models.Conversation).filter(
+        models.Conversation.user_id == current_user.id
+    ).all()
+    
+    ai_conversations = 0
+    for conv in conversations:
+        msg_count = db.query(func.count(models.ConversationMessage.id)).filter(
+            models.ConversationMessage.conversation_id == conv.id
+        ).scalar()
+        if msg_count >= 5:
+            ai_conversations += 1
+    
+    return {
+        "profile_complete": True,
+        "sectors_created": sector_count,
+        "goals_completed": completed_goals,
+        "streak_days": current_user.streak_days,
+        "ai_conversations": ai_conversations,
+        "zone_out_uses": 0,
+        "news_articles_read": 0,
+        "user_level": current_user.human_level
+    }
+
+
+@app.get("/")
+async def root():
+    return {"message": "HUMAN API is running", "status": "ok", "environment": ENV}
+
+
+@app.get("/api")
+async def api_root():
+    return {"message": "HUMAN API", "version": "1.0", "environment": ENV}
