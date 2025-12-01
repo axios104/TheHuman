@@ -1,12 +1,15 @@
 import axios from 'axios';
 
-// Dynamically set API base URL
-const API_BASE_URL = import.meta.env.PROD 
-  ? window.location.origin  // In production, use same origin
-  : 'http://localhost:8000'; // In development, use local backend
+// HARDCODE YOUR BACKEND URL HERE
+const BACKEND_URL = 'https://the-human-backend.vercel.app/';  // ← PUT YOUR BACKEND URL HERE
 
+// Set API base URL based on environment
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'  // Local development
+  : BACKEND_URL;             // Production - your deployed backend URL
+
+console.log('🌐 Current hostname:', window.location.hostname);
 console.log('🌐 API Base URL:', API_BASE_URL);
-console.log('🌐 Environment:', import.meta.env.MODE);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -21,7 +24,7 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Request with token:', config.method.toUpperCase(), config.url);
+      console.log('🔑 API Request:', config.method.toUpperCase(), API_BASE_URL + config.url);
     }
     return config;
   },
@@ -34,11 +37,11 @@ api.interceptors.request.use(
 // Response interceptor - Handle errors
 api.interceptors.response.use(
   (response) => {
-    console.log('✅ Response:', response.config.url, response.status);
+    console.log('✅ API Response:', response.config.url, response.status);
     return response;
   },
   (error) => {
-    console.error('❌ Response error:', error.response?.status, error.response?.data);
+    console.error('❌ API Error:', error.response?.status, error.response?.data);
     
     if (error.response?.status === 401) {
       console.log('🔒 Unauthorized - clearing token');
